@@ -1,2 +1,2 @@
 # Tough-Problems-Elegant-Solutions
-Fun programming challenges 
+Fun algorithmic programming challenges and solutions
