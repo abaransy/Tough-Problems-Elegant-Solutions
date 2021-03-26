@@ -44,38 +44,41 @@ import collections
 class LFUCache:
 
     def __init__(self, capacity: int):
-        self.d = {} # maps key to frequency
-        self.f = defaultdict(dict) # first key is the frequency, second key is the key of the key value pair
-        self.c = capacity
-        self.m = 1 # minimum frequency
+        self.d = {}
+        self.frequency_to_elements = defaultdict(dict)
+        self.capacity = capacity
+        self.minimum_frequency = 1
 
     def get(self, key: int) -> int:
         if key not in self.d:
             return -1
 
-        x = self.d[key]
-        v = self.f[x].pop(key)
+        freq = self.d[key]
+        val = self.frequency_to_elements[freq].pop(key)
+        should_increment_min_freq = not self.frequency_to_elements[freq] and self.minimum_frequency == freq
 
-        if not self.f[x] and self.m == x: # if there are no more elements that have the current minimum frequency
-            self.m += 1
+        if should_increment_min_freq:
+            self.minimum_frequency += 1
 
-        self.f[x + 1][key] = v
-        self.d[key] = x + 1
+        self.d[key] = freq + 1
+        self.frequency_to_elements[freq + 1][key] = val
 
-        return v
+        return val
 
     def put(self, key: int, value: int) -> None:
-        if self.c > 0:
-            if key in self.d: # if the key has been accessed before
+        if self.capacity > 0:
+            if key in self.d:
                 self.get(key)
-                self.f[self.d[key]][key] = value
-            else:
-                if len(self.d) == self.c:
-                    k = next(iter(self.f[self.m])) # gets first item in the dictionary, looks like dictionaries are order in python since version 3.6
 
-                    self.f[self.m].pop(k)
-                    self.d.pop(k)
+                freq = self.d[key]
+
+                self.frequency_to_elements[freq][key] = value
+            else:
+                if len(self.d) == self.capacity:
+                    least_frequently_used_key = next(iter(self.frequency_to_elements[self.minimum_frequency]))
+                    self.d.pop(least_frequently_used_key)
+                    self.frequency_to_elements[self.minimum_frequency].pop(least_frequently_used_key)
 
                 self.d[key] = 1
-                self.f[1][key] = value
-                self.m = 1
+                self.frequency_to_elements[1][key] = value
+                self.minimum_frequency = 1
